@@ -1,94 +1,63 @@
 const { Telegraf } = require('telegraf');
 const mineflayer = require('mineflayer');
 
-// --- КОНФИГУРАЦИЯ ---
-const CONFIG = {
-    TG_TOKEN: '8251508330:AAH99Cwa8u-rPn9RUVf3Q2ktrddWy6syrAE', // ПРИМЕЧАНИЕ: Смени токен в BotFather!
-    ALLOWED_IDS: [7549659947, 8229657533],
-    MC_SETTINGS: {
-        host: 'mc.mineblaze.net',
-        port: 25565,
-        username: '_GVEN_19',
-        version: '1.20.1'
-    },
-    MONEY_AMOUNT: '10000000000000'
+const TG_TOKEN = '8251508330:AAH99Cwa8u-rPn9RUVf3Q2ktrddWy6syrAE'; 
+
+const MC_SETTINGS = {
+    host: 'mc.mineblaze.net',
+    port: 25565,
+    username: '_GVEN_19',
+    version: '1.20.1'
 };
 
-const tgBot = new Telegraf(CONFIG.TG_TOKEN);
+const tgBot = new Telegraf(TG_TOKEN);
 let mcBot = null;
-let adInterval = null;
 
-// --- ТЕЛЕГРАМ ЛОГИКА ---
-tgBot.on('text', (ctx) => {
-    if (!CONFIG.ALLOWED_IDS.includes(ctx.from.id)) return;
-    const msg = ctx.message.text;
-
-    if (msg === '/startad') {
-        if (adInterval) return ctx.reply("Реклама уже запущена.");
-        const adText = "!Набор в клан Eternia открыт. Бесплатный флай !fly и стартовый капитал 10Т !money. ТГ: @Bishnevskii";
-        if (mcBot) {
-            mcBot.chat(adText);
-            adInterval = setInterval(() => { if (mcBot) mcBot.chat(adText); }, 180000);
-            ctx.reply("✅ Реклама запущена.");
-        }
-    } else if (msg === '/stopad') {
-        clearInterval(adInterval);
-        adInterval = null;
-        ctx.reply("⏹️ Реклама остановлена.");
-    } else if (mcBot) {
-        mcBot.chat(msg);
-        ctx.reply("💬 Отправлено в Minecraft.");
-    }
-});
-
-// --- MINECRAFT ЛОГИКА ---
 function createMcBot() {
     if (mcBot) {
         mcBot.removeAllListeners();
         try { mcBot.quit(); } catch (e) {}
     }
 
-    mcBot = mineflayer.createBot(CONFIG.MC_SETTINGS);
+    mcBot = mineflayer.createBot(MC_SETTINGS);
 
     mcBot.once('spawn', () => {
-        setTimeout(() => {
-            mcBot.chat('/login 12345678');
-            setTimeout(() => {
-                mcBot.chat('/s1');
-                mcBot.chat('/c join Eternia');
-            }, 2000);
-        }, 3000);
+        console.log("Бот заспавнился, логинюсь...");
+        setTimeout(() => mcBot.chat('/login 12345678'), 5000);
+        setTimeout(() => { 
+            mcBot.chat('/s1'); 
+            setTimeout(() => mcBot.chat('/c join Eternia'), 3000); 
+        }, 8000);
     });
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
         
-        // Авто-приветствие
         if (text.includes('присоединился к клану')) {
-            const newMember = text.split(' ')[0];
-            setTimeout(() => mcBot.chat(`/cc Добро пожаловать, ${newMember}! ТГ: @Bishnevskii. Команды: !fly, !money`), 2000);
+            const member = text.split(' ')[0];
+            mcBot.chat(`Добро пожаловать, ${member}! Вступай в наш тг чатик, пиши ему @Bishnevskii, а так же доступные команды !fly , !money`);
         }
 
-        // Авто-выдача
-        if (text.toLowerCase().includes('fly') || text.toLowerCase().includes('money')) {
-            const words = text.split(/[\s:→←]+/);
-            const cmdIndex = words.findIndex(w => ['fly', 'money'].includes(w.toLowerCase()));
-            if (cmdIndex > 0) {
-                let target = words[cmdIndex - 1].replace(/[^a-zA-Z0-9_]/g, '');
-                if (target && target !== mcBot.username) {
-                    if (text.toLowerCase().includes('fly')) {
-                        mcBot.chat(`/fly ${target}`);
-                    } else {
-                        mcBot.chat(`/eco set ${target} ${CONFIG.MONEY_AMOUNT}`);
-                    }
-                }
-            }
-        }
+        if (text.includes('!fly')) mcBot.chat('/fly');
+        if (text.includes('!money')) mcBot.chat('/eco set 10000');
     });
 
-    mcBot.on('end', () => setTimeout(createMcBot, 30000)); // Перезапуск при дисконнекте
-    mcBot.on('error', (err) => console.log('MC Error:', err.message));
+    mcBot.on('end', () => {
+        console.log("Бот отключен, реконнект через 60 секунд...");
+        setTimeout(createMcBot, 60000);
+    });
+
+    mcBot.on('error', (err) => console.log("Ошибка MC:", err.message));
+}
+
+function startAutoAd() {
+    setInterval(() => {
+        if (mcBot && mcBot.player) {
+            mcBot.chat("Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай !fly и стартовый капитал в размере 10Т !money (команды отправлять в клан чат). В клане вас ждут надежные тимейты, обустроенный средневековый город, розыгрыши доната и активный чат в Telegram. Для вступления используйте команды /warp Eternia или /clan join Eternia.");
+        }
+    }, 600000); 
 }
 
 createMcBot();
-tgBot.launch();
+startAutoAd();
+tgBot.launch().then(() => console.log("Telegram бот запущен!"));
