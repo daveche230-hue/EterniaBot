@@ -1,0 +1,21 @@
+{
+  "name": "eternia.bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "minecraft-data": "^3.109.1",
+    "minecraft-protocol": "^1.66.1",
+    "mineflayer": "^4.37.1",
+    "mineflayer-pathfinder": "^2.4.5",
+    "telegraf": "^4.16.3"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
