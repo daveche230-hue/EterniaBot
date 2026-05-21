@@ -21,8 +21,8 @@ function createMcBot() {
 
     mcBot = mineflayer.createBot(MC_SETTINGS);
 
+    // ЭТА ЧАСТЬ НЕ ИЗМЕНЕНА (ВХОД)
     mcBot.once('spawn', () => {
-        console.log("Бот заспавнился, логинюсь...");
         setTimeout(() => mcBot.chat('/login 12345678'), 5000);
         setTimeout(() => { 
             mcBot.chat('/s1'); 
@@ -30,34 +30,26 @@ function createMcBot() {
         }, 8000);
     });
 
+    // ПРИВЕТСТВИЕ И КОМАНДЫ
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
-        
         if (text.includes('присоединился к клану')) {
             const member = text.split(' ')[0];
-            mcBot.chat(`Добро пожаловать, ${member}! Вступай в наш тг чатик, пиши ему @Bishnevskii, а так же доступные команды !fly , !money`);
+            mcBot.chat(`Добро пожаловать, ${member}! Вступай в наш тг чатик, пиши ему @Bishnevskii, а так же доступные команды fly , money`);
         }
-
-        if (text.includes('!fly')) mcBot.chat('/fly');
-        if (text.includes('!money')) mcBot.chat('/eco set 10000');
+        if (text.includes(' fly')) mcBot.chat('/fly');
+        if (text.includes(' money')) mcBot.chat('/eco set 10000');
     });
 
-    mcBot.on('end', () => {
-        console.log("Бот отключен, реконнект через 60 секунд...");
-        setTimeout(createMcBot, 60000);
-    });
-
-    mcBot.on('error', (err) => console.log("Ошибка MC:", err.message));
+    mcBot.on('end', () => setTimeout(createMcBot, 60000));
 }
 
-function startAutoAd() {
-    setInterval(() => {
-        if (mcBot && mcBot.player) {
-            mcBot.chat("Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай !fly и стартовый капитал в размере 10Т !money (команды отправлять в клан чат). В клане вас ждут надежные тимейты, обустроенный средневековый город, розыгрыши доната и активный чат в Telegram. Для вступления используйте команды /warp Eternia или /clan join Eternia.");
-        }
-    }, 600000); 
-}
+// РЕКЛАМА
+setInterval(() => {
+    if (mcBot && mcBot.player) {
+        mcBot.chat("Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай fly и стартовый капитал в размере 10Т money (команды отправлять в клан чат). В клане вас ждут надежные тимейты, обустроенный средневековый город, розыгрыши доната и активный чат в Telegram. Для вступления используйте команды /warp Eternia или /clan join Eternia.");
+    }
+}, 600000); 
 
 createMcBot();
-startAutoAd();
-tgBot.launch().then(() => console.log("Telegram бот запущен!"));
+tgBot.launch();
