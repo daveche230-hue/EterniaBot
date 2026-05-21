@@ -6,8 +6,8 @@ const MC_SETTINGS = {
     host: 'mc.mineblaze.net',
     port: 25565,
     username: '_GVEN_19',
-    version: '1.20.1',
-    hideErrors: false // Поставим false, чтобы видеть в консоли, почему именно он выходит
+    version: '1.20.1', // Если сервер обновился, попробуй сменить на '1.20.4' или 'false'
+    auth: 'offline' // Обязательно указываем офлайн-режим
 };
 
 const tgBot = new Telegraf(TG_TOKEN);
@@ -16,40 +16,41 @@ let mcBot = null;
 function createMcBot() {
     if (mcBot) {
         try { mcBot.quit(); } catch (e) {}
-        mcBot.removeAllListeners();
     }
 
     mcBot = mineflayer.createBot(MC_SETTINGS);
 
-    // Ждем полной прогрузки мира перед выполнением команд
     mcBot.once('spawn', () => {
-        console.log("Бот вошел в мир, жду 10 секунд перед авторизацией...");
+        console.log("--- Бот в игре, жду 8 секунд для логина ---");
         setTimeout(() => {
             mcBot.chat('/login 12345678');
-            setTimeout(() => { 
-                mcBot.chat('/s1'); 
-                setTimeout(() => mcBot.chat('/c join Eternia'), 3000); 
-            }, 5000);
-        }, 10000); 
+            setTimeout(() => {
+                mcBot.chat('/s1');
+                setTimeout(() => mcBot.chat('/c join Eternia'), 3000);
+            }, 3000);
+        }, 8000);
     });
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
+        console.log("ЧАТ:", text); // ТЕПЕРЬ ТЫ УВИДИШЬ, ПОЧЕМУ ОН ВЫХОДИТ
+
         if (text.includes('присоединился к клану')) {
             const member = text.split(' ')[0];
             mcBot.chat(`Добро пожаловать, ${member}! Вступай в наш тг чатик, пиши ему @Bishnevskii, а так же доступные команды fly , money`);
         }
-        if (text.includes(' fly')) mcBot.chat('/fly');
-        if (text.includes(' money')) mcBot.chat('/eco set 10000');
+        
+        // Реакция на команды
+        if (text.includes('fly')) mcBot.chat('/fly');
+        if (text.includes('money')) mcBot.chat('/eco set 10000');
     });
 
-    // Увеличили паузу до 3 минут, чтобы сервер не банил IP за частые попытки
-    mcBot.on('end', (reason) => {
-        console.log("Бот вышел! Причина:", reason);
-        setTimeout(createMcBot, 180000);
+    mcBot.on('kicked', (reason) => console.log("Бот кикнут сервером:", reason));
+    mcBot.on('error', (err) => console.log("Ошибка:", err));
+    mcBot.on('end', () => {
+        console.log("Соединение потеряно, реконнект через 2 минуты...");
+        setTimeout(createMcBot, 120000);
     });
-
-    mcBot.on('error', (err) => console.log("Ошибка MC:", err));
 }
 
 setInterval(() => {
