@@ -3,37 +3,31 @@ const mineflayer = require('mineflayer');
 const http = require('http');
 
 const TG_TOKEN = '8251508330:AAH99Cwa8u-rPn9RUVf3Q2ktrddWy6syrAE'; 
-// Сюда можно вписать твой Chat ID в телеграме (например, 123456789), чтобы бот писал тебе в ЛС о своем статусе
-const MY_TG_CHAT_ID = ''; 
 
 const MC_SETTINGS = {
     host: 'mc.mineblaze.net',
     port: 25565,
     username: '_GVEN_19',
     version: '1.20.1',
+    // --- ОТКЛЮЧАЕМ ВСЁ, ЧТО ЖРЕТ ПАМЯТЬ И ВЫЗЫВАЕТ ТАЙМАУТЫ ---
+    loadInternalPlugins: false, // Отключаем лишние плагины mineflayer
     viewDistance: 'tiny',
     physicsEnabled: false
 };
 
-// ВЕБ-СЕРВЕР ДЛЯ RENDER
+// Веб-заглушка для Render
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Eternia Bot is Alive\n');
 }).listen(PORT, () => {
-    console.log(`Сервер-заглушка запущен на порту ${PORT}`);
+    console.log(`Заглушка запущена на порту ${PORT}`);
 });
 
 const tgBot = new Telegraf(TG_TOKEN);
 let mcBot = null;
 let afkInterval = null; 
 let isReady = false; 
-
-function sendTgAlert(message) {
-    if (MY_TG_CHAT_ID) {
-        tgBot.telegram.sendMessage(MY_TG_CHAT_ID, message).catch(e => console.error("Ошибка отправки в ТГ:", e.message));
-    }
-}
 
 function createMcBot() {
     isReady = false;
@@ -43,43 +37,45 @@ function createMcBot() {
         try { mcBot.quit(); } catch (e) {}
     }
 
+    // Создаем максимально облегченного бота
     mcBot = mineflayer.createBot(MC_SETTINGS);
 
+    // Отключаем прогрузку мира и физику на уровне пакетов
+    mcBot.on('inject_allowed', () => {
+        mcBot.plugins.blocks = false;
+        mcBot.plugins.chunks = false;
+        mcBot.plugins.entities = false;
+    });
+
     mcBot.once('spawn', () => {
-        console.log("Бот появился на спавне. Начинаем попытки авторизации...");
-        sendTgAlert("🤖 Бот зашел на сервер, начинает авторизацию...");
+        console.log("Бот на спавне! Пробиваем авторизацию...");
         
-        // Спамим логин каждые 5 секунд, пока бот не перейдет на анархию
-        let loginAttempts = 0;
-        const loginInterval = setInterval(() => {
-            if (isReady || !mcBot || typeof mcBot.chat !== 'function') {
-                clearInterval(loginInterval);
-                return;
-            }
-            loginAttempts++;
-            console.log(`Попытка авторизации #${loginAttempts}`);
-            mcBot.chat('/login 007007007');
-            
-            // Через 3 секунды после логина пробуем прыгнуть на s1
-            setTimeout(() => {
-                if (mcBot && typeof mcBot.chat === 'function' && !isReady) {
-                    mcBot.chat('/s1');
-                }
-            }, 3000);
-        }, 6000);
-
-        // Общая задержка для окончательного входа в клан
+        // Авторизация с новым паролем (007007007) через 5 секунд
         setTimeout(() => {
-            clearInterval(loginInterval);
             if (mcBot && typeof mcBot.chat === 'function') {
-                mcBot.chat('/c join Eternia');
-                isReady = true;
-                console.log("Бот готов к работе в клан-чате!");
-                sendTgAlert("✅ Бот успешно зашел на s1 и подключился к клану Eternia!");
+                mcBot.chat('/login 007007007');
+                console.log("Отправлена команда /login");
             }
-        }, 20000);
+        }, 5000);
 
-        // Анти-AFK
+        // Прыжок на s1 анархию через 10 секунд
+        setTimeout(() => { 
+            if (mcBot && typeof mcBot.chat === 'function') {
+                mcBot.chat('/s1'); 
+                console.log("Отправлена команда /s1");
+                
+                // Вход в клан через 3 секунды после прыжка
+                setTimeout(() => {
+                    if (mcBot && typeof mcBot.chat === 'function') {
+                        mcBot.chat('/c join Eternia');
+                        isReady = true; 
+                        console.log("Бот успешно вошел в клан чат!");
+                    }
+                }, 3000);
+            }
+        }, 10000);
+
+        // Анти-AFK махи рукой
         afkInterval = setInterval(() => {
             if (mcBot && mcBot.entity) {
                 mcBot.swingHand();
@@ -89,12 +85,6 @@ function createMcBot() {
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
-        
-        // Если просит авторизоваться, а мы думали что зашли — сбрасываем статус
-        if (text.includes('/login') || text.includes('/регистрироваться')) {
-            isReady = false;
-        }
-
         if (!isReady || typeof mcBot.chat !== 'function') return;
 
         if (text.includes('присоединился к клану')) {
@@ -105,24 +95,17 @@ function createMcBot() {
         if (text.includes(' money')) mcBot.chat('/eco set 10000');
     });
 
-    mcBot.on('kicked', (reason) => {
-        const errorText = reason.toString();
-        console.log("(!) Кик с сервера. Причина:", errorText);
-        sendTgAlert(`❌ Бота кикнули! Причина: ${errorText}`);
-    });
-
-    mcBot.on('error', (err) => {
-        console.error("(!) Ошибка сети:", err.message);
-    });
+    mcBot.on('kicked', (reason) => console.log("(!) Кик. Причина:", reason.toString()));
+    mcBot.on('error', (err) => console.error("(!) Ошибка:", err.message));
 
     mcBot.on('end', (reason) => {
-        console.log("Бот отсоединился. Причина:", reason);
+        console.log("Бот отключился. Причина:", reason);
         isReady = false;
         if (afkInterval) clearInterval(afkInterval);
         
-        // Если кикнул прокси или висит сессия — увеличиваем задержку до 45 секунд
-        console.log("Ожидаем 45 секунд перед автоматическим перезаходом...");
-        setTimeout(createMcBot, 45000); 
+        // Даем серверу минуту остыть, чтобы прокси не блокировал
+        console.log("Ждем 60 секунд перед чистым перезаходом...");
+        setTimeout(createMcBot, 60000); 
     });
 }
 
