@@ -9,9 +9,9 @@ const MC_SETTINGS = {
     port: 25565,
     username: '_GVEN_19',
     version: '1.20.1',
-    // --- ОТКЛЮЧАЕМ ВСЁ, ЧТО ЖРЕТ ПАМЯТЬ И ВЫЗЫВАЕТ ТАЙМАУТЫ ---
-    loadInternalPlugins: false, // Отключаем лишние плагины mineflayer
+    // --- ПРАВИЛЬНОЕ ОТКЛЮЧЕНИЕ ПРОГРУЗКИ ДЛЯ ЭКОНОМИИ ПАМЯТИ ---
     viewDistance: 'tiny',
+    loadInternalPlugins: false, // Отключаем физику, инвентарь и окна напрочь
     physicsEnabled: false
 };
 
@@ -37,20 +37,13 @@ function createMcBot() {
         try { mcBot.quit(); } catch (e) {}
     }
 
-    // Создаем максимально облегченного бота
+    // Создаем ультра-легкого бота
     mcBot = mineflayer.createBot(MC_SETTINGS);
 
-    // Отключаем прогрузку мира и физику на уровне пакетов
-    mcBot.on('inject_allowed', () => {
-        mcBot.plugins.blocks = false;
-        mcBot.plugins.chunks = false;
-        mcBot.plugins.entities = false;
-    });
-
     mcBot.once('spawn', () => {
-        console.log("Бот на спавне! Пробиваем авторизацию...");
+        console.log("Бот успешно прорвался на сервер! Авторизуемся...");
         
-        // Авторизация с новым паролем (007007007) через 5 секунд
+        // Авторизация через 5 секунд
         setTimeout(() => {
             if (mcBot && typeof mcBot.chat === 'function') {
                 mcBot.chat('/login 007007007');
@@ -58,7 +51,7 @@ function createMcBot() {
             }
         }, 5000);
 
-        // Прыжок на s1 анархию через 10 секунд
+        // Прыжок на s1 через 10 секунд
         setTimeout(() => { 
             if (mcBot && typeof mcBot.chat === 'function') {
                 mcBot.chat('/s1'); 
@@ -69,16 +62,16 @@ function createMcBot() {
                     if (mcBot && typeof mcBot.chat === 'function') {
                         mcBot.chat('/c join Eternia');
                         isReady = true; 
-                        console.log("Бот успешно вошел в клан чат!");
+                        console.log("Бот полностью готов и зашел в клан!");
                     }
                 }, 3000);
             }
         }, 10000);
 
-        // Анти-AFK махи рукой
+        // Облегченный анти-AFK (просто пишем пустую команду в консоль сервера раз в 40 сек, чтобы не кикало)
         afkInterval = setInterval(() => {
-            if (mcBot && mcBot.entity) {
-                mcBot.swingHand();
+            if (mcBot && typeof mcBot.chat === 'function') {
+                mcBot.chat('/afk_check_stay'); 
             }
         }, 40000);
     });
@@ -96,14 +89,13 @@ function createMcBot() {
     });
 
     mcBot.on('kicked', (reason) => console.log("(!) Кик. Причина:", reason.toString()));
-    mcBot.on('error', (err) => console.error("(!) Ошибка:", err.message));
+    mcBot.on('error', (err) => console.error("(!) Ошибка сети:", err.message));
 
     mcBot.on('end', (reason) => {
         console.log("Бот отключился. Причина:", reason);
         isReady = false;
         if (afkInterval) clearInterval(afkInterval);
         
-        // Даем серверу минуту остыть, чтобы прокси не блокировал
         console.log("Ждем 60 секунд перед чистым перезаходом...");
         setTimeout(createMcBot, 60000); 
     });
