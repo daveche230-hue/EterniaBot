@@ -54,7 +54,7 @@ tgBot.on('text', (ctx) => {
             adInterval = null;
         }
         ctx.reply("⏹️ Реклама остановлена.");
-    } else if (mcBot && typeof mcBot.chat === 'function') {
+    } else if (mcBot && mcBot._client && typeof mcBot.chat === 'function') {
         // Автоматический пересыл сообщений: добавляем "!", если отправляется обычный текст
         if (!msg.startsWith('!') && !msg.startsWith('/')) {
             msg = '!' + msg;
@@ -182,7 +182,7 @@ function createMcBot() {
         setTimeout(createMcBot, 15000);
     });
 }
-
+/*
 // Автоматический спам рекламы раз в 3 минуты (180 000 мс) в глобальный чат
 setInterval(() => {
     if (mcBot && typeof mcBot.chat === 'function') {
@@ -190,6 +190,21 @@ setInterval(() => {
         console.log("📢 Авто-реклама отправлена на /s1");
     }
 }, 180000); 
+*/
+
+// Автоматический спам рекламы раз в 3 минуты (180 000 мс) в глобальный чат с проверкой подключения к серверу
+setInterval(() => {
+    // ДОБАВЛЕНА СТРОГАЯ ПРОВЕРКА НАЛИЧИЯ ПОДКЛЮЧЕНИЯ К СЕРВЕРУ
+    if (mcBot && mcBot._client && typeof mcBot.chat === 'function') {
+        try {
+            mcBot.chat(CLAN_AD_TEXT);
+            console.log("📢 Авто-реклама отправлена на /s1");
+        } catch (e) {
+            console.log("Ошибка отправки авто-рекламы (бот не в сети):", e.message);
+        }
+    }
+}, 180000); 
+
 
 // Запуск бота
 createMcBot();
