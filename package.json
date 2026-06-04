@@ -1,14 +1,12 @@
 {
-  "name": "eterniabot",
+  "name": "eternia_bot",
   "version": "1.0.0",
-  "description": "Minecraft Clan Bot",
   "main": "bot.js",
+  "dependencies": {
+    "mineflayer": "^4.37.1",
+    "telegraf": "^4.16.3"
+  },
   "scripts": {
     "start": "node bot.js"
-  },
-  "dependencies": {
-    "mineflayer": "^4.20.0",
-    "telegraf": "^4.16.3",
-    "socks-proxy-agent": "^8.0.3"
   }
 }
