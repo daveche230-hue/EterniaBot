@@ -2,7 +2,7 @@ const { Telegraf } = require('telegraf');
 const mineflayer = require('mineflayer');
 
 // НАСТРОЙКИ
-const TG_TOKEN = '8251508330:AAEq8oIkn8mtH6YrI5KS1uZLr876hyXe4eE'; // Твой рабочий токен
+const TG_TOKEN = '8251508330:AAF5Dx91jm1x1Spb37Pa0uDMjUvZ4haQcQU'; // Твой рабочий токен
 const ALLOWED_IDS = [7549659947, 8229657533, 1930216279]; 
 
 const MC_SETTINGS = {
