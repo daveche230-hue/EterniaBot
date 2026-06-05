@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 const mineflayer = require('mineflayer');
 
-// НАСТРОЙКИ
+// --- НАСТРОЙКИ ---
 const TG_TOKEN = '8251508330:AAEq8oIkn8mtH6YrI5KS1uZLr876hyXe4eE';
 const ALLOWED_IDS = [7549659947, 8229657533, 1930216279];
 const MC_SETTINGS = {
@@ -20,63 +20,77 @@ const tgBot = new Telegraf(TG_TOKEN);
 let mcBot;
 let adInterval = null;
 
-// ФУНКЦИЯ УВЕДОМЛЕНИЙ
-function notifyAdmins(text) {
-    ALLOWED_IDS.forEach(id => tgBot.telegram.sendMessage(id, text).catch(() => {}));
-}
-
-// ТЕЛЕГРАМ
+// --- ТЕЛЕГРАМ ---
 tgBot.on('text', (ctx) => {
     if (!ALLOWED_IDS.includes(ctx.from.id)) return;
+    
     const msg = ctx.message.text;
+    console.log(`[TG] Получено: ${msg}`);
+
     if (msg === '/startad') {
-        if (adInterval) return ctx.reply("Реклама уже идет!");
-        adInterval = setInterval(() => { if (mcBot) mcBot.chat(CLAN_AD_TEXT); }, 180000);
-        ctx.reply("✅ Реклама запущена.");
-    } else if (msg === '/stopad') {
-        clearInterval(adInterval); adInterval = null;
-        ctx.reply("⏹️ Реклама остановлена.");
-    } else if (mcBot) {
-        mcBot.chat(msg.startsWith('/') || msg.startsWith('!') ? msg : '!' + msg);
-        ctx.reply(`💬 Отправлено: ${msg}`);
+        if (adInterval) return ctx.reply("⚠️ Реклама уже запущена!");
+        adInterval = setInterval(() => {
+            if (mcBot && mcBot.entity) mcBot.chat(CLAN_AD_TEXT);
+        }, 180000);
+        return ctx.reply("✅ Реклама запущена.");
+    } 
+    
+    if (msg === '/stopad') {
+        clearInterval(adInterval);
+        adInterval = null;
+        return ctx.reply("⏹️ Реклама остановлена.");
+    }
+
+    // Отправка сообщений в игру
+    if (mcBot && mcBot.entity) {
+        const command = (msg.startsWith('/') || msg.startsWith('!')) ? msg : '!' + msg;
+        mcBot.chat(command);
+        ctx.reply(`💬 Отправлено в чат: ${command}`);
+    } else {
+        ctx.reply("❌ Бот не в игре. Подождите переподключения.");
     }
 });
 
-// MINECRAFT
+// --- MINECRAFT ---
 function createMcBot() {
+    console.log("🔄 Попытка подключения к серверу...");
     mcBot = mineflayer.createBot(MC_SETTINGS);
 
     mcBot.once('spawn', () => {
-        console.log("🔥 Бот на сервере. Ожидание...");
-        // Увеличенная задержка для стабильной авторизации
-        setTimeout(() => mcBot.chat(`/login ${MC_PASSWORD}`), 6000);
+        console.log("🔥 Бот заспавнился. Авторизация...");
+        setTimeout(() => mcBot.chat(`/login ${MC_PASSWORD}`), 5000);
         setTimeout(() => { 
             mcBot.chat('/s1'); 
             setTimeout(() => mcBot.chat('/c join Eternia'), 3000);
-        }, 12000);
+        }, 10000);
     });
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
-        process.stdout.write("ЧАТ: " + text + "\n");
+        console.log("ЧАТ ИГРЫ: " + text);
 
+        // Уведомление админам о проверках
         if (text.toLowerCase().includes('http') || text.toLowerCase().includes('проверку')) {
-            notifyAdmins(`⚠ **Внимание, проверка:** ${text}`);
+            ALLOWED_IDS.forEach(id => tgBot.telegram.sendMessage(id, `⚠ **Внимание, проверка:** ${text}`).catch(() => {}));
         }
 
-        if (text.toLowerCase().includes('fly') || text.toLowerCase().includes('money')) {
-            const match = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
-            if (match && match[1] !== mcBot.username) {
-                if (match[2].toLowerCase() === 'fly') mcBot.chat(`/fly ${match[1]}`);
-                else mcBot.chat(`/eco set ${match[1]} ${MONEY_AMOUNT}`);
-            }
+        // Авто-ответы на fly/money
+        const match = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
+        if (match && match[1] !== mcBot.username) {
+            if (match[2].toLowerCase() === 'fly') mcBot.chat(`/fly ${match[1]}`);
+            else mcBot.chat(`/eco set ${match[1]} ${MONEY_AMOUNT}`);
         }
     });
 
-    // Увеличенная задержка до 60 секунд, чтобы не попасть в черный список
-    mcBot.on('end', () => setTimeout(createMcBot, 60000));
-    mcBot.on('error', (err) => console.log("Ошибка:", err.message));
+    mcBot.on('end', (reason) => {
+        console.log(`❌ Бот отключился: ${reason}. Переподключение через 60 сек.`);
+        setTimeout(createMcBot, 60000);
+    });
+
+    mcBot.on('error', (err) => {
+        console.log("❌ Ошибка бота:", err.message);
+    });
 }
 
 createMcBot();
-tgBot.launch().catch(console.error);
+tgBot.launch().then(() => console.log("🚀 Telegram бот запущен")).catch(console.error);
