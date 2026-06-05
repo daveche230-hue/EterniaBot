@@ -1,10 +1,9 @@
 const { Telegraf } = require('telegraf');
 const mineflayer = require('mineflayer');
 
-// Твой токен со скриншота BotFather
-const TG_TOKEN = '8251508330:AAF7uoxAZfU-QOqdWgqDCMRwaSFygMov1Ys';
+// НАСТРОЙКИ
+const TG_TOKEN = '8251508330:AAEq8oIkn8mtH6YrI5KS1uZLr876hyXe4eE';
 const ALLOWED_IDS = [7549659947, 8229657533, 1930216279];
-
 const MC_SETTINGS = {
     host: 'mc.mineblaze.net',
     port: 25565,
@@ -13,10 +12,9 @@ const MC_SETTINGS = {
     hideErrors: true,
     physicsEnabled: false
 };
-
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-const CLAN_AD_TEXT = "!Набор в клан Eternia открыт. Мы предлагаем бесплатный флай и деньги. ТГ чат: @Bishnevskii";
+const CLAN_AD_TEXT = "!Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай и стартовый капитал. ТГ чат: @Bishnevskii";
 
 const tgBot = new Telegraf(TG_TOKEN);
 let mcBot;
@@ -31,7 +29,6 @@ function notifyAdmins(text) {
 tgBot.on('text', (ctx) => {
     if (!ALLOWED_IDS.includes(ctx.from.id)) return;
     const msg = ctx.message.text;
-
     if (msg === '/startad') {
         if (adInterval) return ctx.reply("Реклама уже идет!");
         adInterval = setInterval(() => { if (mcBot) mcBot.chat(CLAN_AD_TEXT); }, 180000);
@@ -41,7 +38,7 @@ tgBot.on('text', (ctx) => {
         ctx.reply("⏹️ Реклама остановлена.");
     } else if (mcBot) {
         mcBot.chat(msg.startsWith('/') || msg.startsWith('!') ? msg : '!' + msg);
-        ctx.reply(`💬 Отправлено в игру: ${msg}`);
+        ctx.reply(`💬 Отправлено: ${msg}`);
     }
 });
 
@@ -50,7 +47,8 @@ function createMcBot() {
     mcBot = mineflayer.createBot(MC_SETTINGS);
 
     mcBot.once('spawn', () => {
-        console.log("🔥 Бот на сервере. Ожидание авторизации...");
+        console.log("🔥 Бот на сервере. Ожидание...");
+        // Увеличенная задержка для стабильной авторизации
         setTimeout(() => mcBot.chat(`/login ${MC_PASSWORD}`), 6000);
         setTimeout(() => { 
             mcBot.chat('/s1'); 
@@ -75,10 +73,10 @@ function createMcBot() {
         }
     });
 
+    // Увеличенная задержка до 60 секунд, чтобы не попасть в черный список
     mcBot.on('end', () => setTimeout(createMcBot, 60000));
     mcBot.on('error', (err) => console.log("Ошибка:", err.message));
 }
 
 createMcBot();
 tgBot.launch().catch(console.error);
-console.log("Бот инициализирован!");
