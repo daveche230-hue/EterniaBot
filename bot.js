@@ -20,12 +20,17 @@ const tgBot = new Telegraf(TG_TOKEN);
 let mcBot;
 let adInterval = null;
 
+// --- ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ ---
+tgBot.use((ctx, next) => {
+    console.log(`[TG] Пришло сообщение от ${ctx.from.id}: ${ctx.message?.text || 'не текст'}`);
+    return next();
+});
+
 // --- ТЕЛЕГРАМ ---
 tgBot.on('text', (ctx) => {
     if (!ALLOWED_IDS.includes(ctx.from.id)) return;
     
     const msg = ctx.message.text;
-    console.log(`[TG] Получено: ${msg}`);
 
     if (msg === '/startad') {
         if (adInterval) return ctx.reply("⚠️ Реклама уже запущена!");
@@ -41,7 +46,6 @@ tgBot.on('text', (ctx) => {
         return ctx.reply("⏹️ Реклама остановлена.");
     }
 
-    // Отправка сообщений в игру
     if (mcBot && mcBot.entity) {
         const command = (msg.startsWith('/') || msg.startsWith('!')) ? msg : '!' + msg;
         mcBot.chat(command);
@@ -69,12 +73,10 @@ function createMcBot() {
         const text = jsonMsg.toString();
         console.log("ЧАТ ИГРЫ: " + text);
 
-        // Уведомление админам о проверках
         if (text.toLowerCase().includes('http') || text.toLowerCase().includes('проверку')) {
             ALLOWED_IDS.forEach(id => tgBot.telegram.sendMessage(id, `⚠ **Внимание, проверка:** ${text}`).catch(() => {}));
         }
 
-        // Авто-ответы на fly/money
         const match = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
         if (match && match[1] !== mcBot.username) {
             if (match[2].toLowerCase() === 'fly') mcBot.chat(`/fly ${match[1]}`);
@@ -93,4 +95,10 @@ function createMcBot() {
 }
 
 createMcBot();
-tgBot.launch().then(() => console.log("🚀 Telegram бот запущен")).catch(console.error);
+
+// --- ЗАПУСК ТЕЛЕГРАМ БОТА ---
+// Принудительно очищаем Webhook, чтобы избежать конфликтов на хостинге
+tgBot.telegram.deleteWebhook().then(() => {
+    tgBot.launch({ dropPendingUpdates: true });
+    console.log("🚀 Telegram бот запущен (Polling mode)");
+}).catch(console.error);
