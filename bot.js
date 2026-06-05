@@ -17,45 +17,42 @@ let adInterval = null;
 
 function createMcBot() {
     mcBot = mineflayer.createBot(MC_SETTINGS);
+
     mcBot.once('spawn', () => {
+        console.log("🔥 Бот зашел! Ждем 6 секунд до логина...");
         setTimeout(() => mcBot.chat('/login 12345678'), 6000);
-        setTimeout(() => { mcBot.chat('/s1'); setTimeout(() => mcBot.chat('/c join Eternia'), 3000); }, 12000);
+        setTimeout(() => { 
+            mcBot.chat('/s1'); 
+            setTimeout(() => mcBot.chat('/c join Eternia'), 3000);
+        }, 12000);
     });
+
     mcBot.on('message', (jsonMsg) => {
-        const text = jsonMsg.toString();
-        ALLOWED_IDS.forEach(id => tgBot.telegram.sendMessage(id, "🎮: " + text).catch(() => {}));
+        console.log("ЧАТ ИГРЫ:", jsonMsg.toString());
     });
-    mcBot.on('end', () => setTimeout(createMcBot, 60000));
 }
 
-// ОБРАБОТКА ВСЕХ КОМАНД
 tgBot.on('text', (ctx) => {
     if (!ALLOWED_IDS.includes(ctx.from.id)) return;
     const msg = ctx.message.text;
 
     if (msg === '/startad') {
         if (adInterval) return ctx.reply("Реклама уже идет!");
-        adInterval = setInterval(() => { if (mcBot) mcBot.chat("!Набор в клан Eternia! Команды: !fly, !money"); }, 180000);
+        adInterval = setInterval(() => { 
+            if (mcBot) mcBot.chat("!Набор в клан Eternia! Команды: !fly, !money"); 
+        }, 180000);
         ctx.reply("✅ Реклама запущена.");
     } else if (msg === '/stopad') {
         clearInterval(adInterval); adInterval = null;
         ctx.reply("⏹️ Реклама остановлена.");
-    } else if (msg === '/status') {
-        ctx.reply(mcBot ? "✅ Бот в игре" : "❌ Бот не в сети");
-    } else if (msg === '/s1') {
-        mcBot.chat('/s1'); ctx.reply("🚀 Перехожу на s1");
-    } else if (msg === '/warp') {
-        mcBot.chat('/warp Eternia'); ctx.reply("📍 Телепорт на варп");
-    } else if (msg.startsWith('/')) {
-        // Любая другая команда со слэшем
-        mcBot.chat(msg);
-        ctx.reply("⚙️ Команда: " + msg);
-    } else {
-        // Текст без слэша - в клан-чат
-        mcBot.chat('/c ' + msg);
-        ctx.reply("💬 В клан-чат: " + msg);
+    } else if (mcBot) {
+        // Добавляем ! принудительно, если это обычный текст
+        const command = msg.startsWith('/') || msg.startsWith('!') ? msg : '!' + msg;
+        mcBot.chat(command);
+        ctx.reply("✅ Команда отправлена в чат: " + command);
     }
 });
 
 createMcBot();
 tgBot.launch();
+console.log("Бот запущен и ждет команд!");
