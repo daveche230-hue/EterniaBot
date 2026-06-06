@@ -11,7 +11,6 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-// Текст рекламы в соответствии с image_01b71a.png
 const CLAN_AD_TEXT = "~~Eternia <- ангел -> Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай и стартовый капитал. ТГ чат: @Bishnevskii";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
@@ -34,29 +33,32 @@ function createMcBot() {
         const text = jsonMsg.toString();
         console.log("ЧАТ: " + text);
 
-        // Обработка команд управления через клановый чат (КЛАН: Имя: команда)
-        const clanMatch = text.match(/КЛАН:\s*([^:]+):\s*(.+)/i);
-        
-        if (clanMatch) {
-            const sender = clanMatch[1].trim(); 
-            const msg = clanMatch[2].trim().toLowerCase(); 
-
-            if (ALLOWED_USERS.includes(sender)) {
-                if (msg === 'ad') {
-                    mcBot.chat(CLAN_AD_TEXT);
-                } else if (msg === 'startad') {
+        // УПРАВЛЕНИЕ РЕКЛАМОЙ ЧЕРЕЗ КЛАН-ЧАТ
+        // Если сообщение от доверенного пользователя и содержит команду
+        if (text.includes('КЛАН:')) {
+            const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
+            if (isAuthorized) {
+                const lowerText = text.toLowerCase();
+                if (lowerText.includes('stopad')) {
+                    if (adInterval) {
+                        clearInterval(adInterval);
+                        adInterval = null;
+                        console.log("⏹️ Реклама остановлена.");
+                    }
+                } else if (lowerText.includes('startad')) {
                     if (!adInterval) {
                         mcBot.chat(CLAN_AD_TEXT);
                         adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 240000);
+                        console.log("✅ Реклама запущена.");
                     }
-                } else if (msg === 'stopad') {
-                    clearInterval(adInterval);
-                    adInterval = null;
+                } else if (lowerText.includes('ad')) {
+                    mcBot.chat(CLAN_AD_TEXT);
+                    console.log("💬 Реклама отправлена разово.");
                 }
             }
         }
 
-        // Авто-команды fly/money для всех игроков
+        // АВТО-КОМАНДЫ FLY/MONEY
         if (text.toLowerCase().includes('fly') || text.toLowerCase().includes('money')) {
             const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
             if (cmdMatch && cmdMatch[1] !== mcBot.username) {
@@ -70,6 +72,7 @@ function createMcBot() {
     });
 
     mcBot.on('end', () => {
+        console.log("Бот отключен. Переподключение через 60 секунд...");
         clearInterval(adInterval);
         adInterval = null;
         setTimeout(createMcBot, 60000);
