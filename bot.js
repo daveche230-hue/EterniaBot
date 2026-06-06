@@ -11,10 +11,7 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-
-// ИСПРАВЛЕННЫЙ ТЕКСТ (без дублей, так как сервер добавляет заголовок сам)
-const CLAN_AD_TEXT = "Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай и стартовый капитал. ТГ чат: @Bishnevskii";
-
+const CLAN_AD_TEXT = "Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай fly и стартовый капитал в размере 10Т money (команды отправлять в клан чат). В клане вас ждут надежные тимейты, обустроенный средневековый город, розыгрыши доната и активный чат в Telegram. Для вступления используйте команды /warp Eternia или /clan join Eternia.";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
 let mcBot;
@@ -24,6 +21,7 @@ function createMcBot() {
     mcBot = mineflayer.createBot(MC_SETTINGS);
 
     mcBot.once('spawn', () => {
+        console.log("🔥 Бот на сервере.");
         setTimeout(() => mcBot.chat(`/login ${MC_PASSWORD}`), 6000);
         setTimeout(() => { 
             mcBot.chat('/s1'); 
@@ -33,22 +31,29 @@ function createMcBot() {
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
-        
-        // УПРАВЛЕНИЕ ЧЕРЕЗ КЛАН-ЧАТ
+        console.log("ЧАТ: " + text);
+
+        // УПРАВЛЕНИЕ РЕКЛАМОЙ ЧЕРЕЗ КЛАН-ЧАТ
+        // Если сообщение от доверенного пользователя и содержит команду
         if (text.includes('КЛАН:')) {
             const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
             if (isAuthorized) {
                 const lowerText = text.toLowerCase();
                 if (lowerText.includes('stopad')) {
-                    clearInterval(adInterval);
-                    adInterval = null;
+                    if (adInterval) {
+                        clearInterval(adInterval);
+                        adInterval = null;
+                        console.log("⏹️ Реклама остановлена.");
+                    }
                 } else if (lowerText.includes('startad')) {
                     if (!adInterval) {
                         mcBot.chat(CLAN_AD_TEXT);
                         adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 240000);
+                        console.log("✅ Реклама запущена.");
                     }
                 } else if (lowerText.includes('ad')) {
                     mcBot.chat(CLAN_AD_TEXT);
+                    console.log("💬 Реклама отправлена разово.");
                 }
             }
         }
@@ -67,10 +72,13 @@ function createMcBot() {
     });
 
     mcBot.on('end', () => {
+        console.log("Бот отключен. Переподключение через 60 секунд...");
         clearInterval(adInterval);
         adInterval = null;
         setTimeout(createMcBot, 60000);
     });
+
+    mcBot.on('error', (err) => console.log("Ошибка:", err.message));
 }
 
 createMcBot();
