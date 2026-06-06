@@ -1,9 +1,6 @@
-const { Telegraf } = require('telegraf');
 const mineflayer = require('mineflayer');
 
 // НАСТРОЙКИ
-const TG_TOKEN = '8251508330:AAEq8oIkn8mtH6YrI5KS1uZLr876hyXe4eE';
-const ALLOWED_IDS = [7549659947, 8229657533, 1930216279];
 const MC_SETTINGS = {
     host: 'mc.mineblaze.net',
     port: 25565,
@@ -16,31 +13,8 @@ const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
 const CLAN_AD_TEXT = "!Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай и стартовый капитал. ТГ чат: @Bishnevskii";
 
-const tgBot = new Telegraf(TG_TOKEN);
 let mcBot;
 let adInterval = null;
-
-// ФУНКЦИЯ УВЕДОМЛЕНИЙ
-function notifyAdmins(text) {
-    ALLOWED_IDS.forEach(id => tgBot.telegram.sendMessage(id, text).catch(() => {}));
-}
-
-// ТЕЛЕГРАМ
-tgBot.on('text', (ctx) => {
-    if (!ALLOWED_IDS.includes(ctx.from.id)) return;
-    const msg = ctx.message.text;
-    if (msg === '/startad') {
-        if (adInterval) return ctx.reply("Реклама уже идет!");
-        adInterval = setInterval(() => { if (mcBot) mcBot.chat(CLAN_AD_TEXT); }, 180000);
-        ctx.reply("✅ Реклама запущена.");
-    } else if (msg === '/stopad') {
-        clearInterval(adInterval); adInterval = null;
-        ctx.reply("⏹️ Реклама остановлена.");
-    } else if (mcBot) {
-        mcBot.chat(msg.startsWith('/') || msg.startsWith('!') ? msg : '!' + msg);
-        ctx.reply(`💬 Отправлено: ${msg}`);
-    }
-});
 
 // MINECRAFT
 function createMcBot() {
@@ -48,21 +22,23 @@ function createMcBot() {
 
     mcBot.once('spawn', () => {
         console.log("🔥 Бот на сервере. Ожидание...");
-        // Увеличенная задержка для стабильной авторизации
+        
         setTimeout(() => mcBot.chat(`/login ${MC_PASSWORD}`), 6000);
         setTimeout(() => { 
             mcBot.chat('/s1'); 
             setTimeout(() => mcBot.chat('/c join Eternia'), 3000);
         }, 12000);
+
+        // Запуск рекламы раз в 4 минуты (240000 мс)
+        if (adInterval) clearInterval(adInterval);
+        adInterval = setInterval(() => { 
+            if (mcBot) mcBot.chat(CLAN_AD_TEXT); 
+        }, 240000);
     });
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
         process.stdout.write("ЧАТ: " + text + "\n");
-
-        if (text.toLowerCase().includes('http') || text.toLowerCase().includes('проверку')) {
-            notifyAdmins(`⚠ **Внимание, проверка:** ${text}`);
-        }
 
         if (text.toLowerCase().includes('fly') || text.toLowerCase().includes('money')) {
             const match = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
@@ -73,10 +49,12 @@ function createMcBot() {
         }
     });
 
-    // Увеличенная задержка до 60 секунд, чтобы не попасть в черный список
-    mcBot.on('end', () => setTimeout(createMcBot, 60000));
+    mcBot.on('end', () => {
+        clearInterval(adInterval);
+        setTimeout(createMcBot, 60000);
+    });
+    
     mcBot.on('error', (err) => console.log("Ошибка:", err.message));
 }
 
 createMcBot();
-tgBot.launch().catch(console.error);
