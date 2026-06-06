@@ -11,7 +11,7 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-// Текст точно как на вашем скриншоте
+// Текст рекламы в соответствии с image_01b71a.png
 const CLAN_AD_TEXT = "~~Eternia <- ангел -> Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай и стартовый капитал. ТГ чат: @Bishnevskii";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
@@ -34,13 +34,12 @@ function createMcBot() {
         const text = jsonMsg.toString();
         console.log("ЧАТ: " + text);
 
-        // Регулярное выражение для захвата имени отправителя и сообщения
-        // Ожидает формат: <Имя> сообщение
-        const match = text.match(/<([^>]+)> (.+)/);
+        // Обработка команд управления через клановый чат (КЛАН: Имя: команда)
+        const clanMatch = text.match(/КЛАН:\s*([^:]+):\s*(.+)/i);
         
-        if (match) {
-            const sender = match[1];
-            const msg = match[2].trim().toLowerCase();
+        if (clanMatch) {
+            const sender = clanMatch[1].trim(); 
+            const msg = clanMatch[2].trim().toLowerCase(); 
 
             if (ALLOWED_USERS.includes(sender)) {
                 if (msg === 'ad') {
@@ -57,7 +56,7 @@ function createMcBot() {
             }
         }
 
-        // Авто-команды fly/money
+        // Авто-команды fly/money для всех игроков
         if (text.toLowerCase().includes('fly') || text.toLowerCase().includes('money')) {
             const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
             if (cmdMatch && cmdMatch[1] !== mcBot.username) {
