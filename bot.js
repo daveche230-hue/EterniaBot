@@ -11,7 +11,7 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-const CLAN_AD_TEXT = "Набор в клан Eternia открыт.Мы предлагаем каждому участнику бесплатный флай fly и стартовый капитал в размере 10Т money(команды отправлять в клан чат).В клане вас ждут надежные тимейты,розыгрыши доната и активный чат в Telegram.Для вступления используйте команды/warp Eternia или/clan join Eternia.";
+const CLAN_AD_TEXT = "const CLAN_AD_TEXT = "!Клан Eternia открыт! Бесплатный fly, 10Т, свой город и розыгрыши доната. Активный чат в ТГ. Вступай: /warp Eternia или /clan join Eternia";";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
 let mcBot;
