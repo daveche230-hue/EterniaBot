@@ -12,7 +12,7 @@ const MC_SETTINGS = {
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
 
-// ИСПРАВЛЕННЫЙ ТЕКСТ (без дублирующего тега, который сервер добавляет сам)
+// ИСПРАВЛЕННЫЙ ТЕКСТ (без дублей, так как сервер добавляет заголовок сам)
 const CLAN_AD_TEXT = "Набор в клан Eternia открыт. Мы предлагаем каждому участнику бесплатный флай и стартовый капитал. ТГ чат: @Bishnevskii";
 
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
@@ -34,6 +34,7 @@ function createMcBot() {
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
         
+        // УПРАВЛЕНИЕ ЧЕРЕЗ КЛАН-ЧАТ
         if (text.includes('КЛАН:')) {
             const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
             if (isAuthorized) {
@@ -52,6 +53,7 @@ function createMcBot() {
             }
         }
 
+        // АВТО-КОМАНДЫ FLY/MONEY
         if (text.toLowerCase().includes('fly') || text.toLowerCase().includes('money')) {
             const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
             if (cmdMatch && cmdMatch[1] !== mcBot.username) {
