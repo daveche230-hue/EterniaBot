@@ -11,6 +11,7 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
+// Чистая строка рекламы
 const CLAN_AD_TEXT = "!Клан Eternia открыт! Бесплатный fly, 10Т, свой город и розыгрыши доната. Активный чат в ТГ. Вступай: /warp Eternia или /clan join Eternia";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
@@ -31,57 +32,48 @@ function createMcBot() {
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
-        const lowerText = text.toLowerCase();
         console.log("ЧАТ: " + text);
 
-        // 1. ПРИВЕТСТВИЕ (для всех)
-        if (lowerText.includes('вступил в клан') || lowerText.includes('присоединился к клану')) {
-            const playerName = text.split(' ')[0];
-            mcBot.chat(`/clan chat Добро пожаловать, ${playerName}! Вступай в наш ТГ и читай правила в /warp Eternia.`);
-        }
-
-        // ПРОВЕРКА АВТОРА
-        const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
-
-        // 2. УПРАВЛЕНИЕ РЕКЛАМОЙ (ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ)
-        if (isAuthorized) {
-            if (lowerText.includes('stopad')) {
-                if (adInterval) {
-                    clearInterval(adInterval);
-                    adInterval = null;
-                    mcBot.chat("/clan chat ⏹️ Реклама остановлена.");
+        // УПРАВЛЕНИЕ РЕКЛАМОЙ ЧЕРЕЗ КЛАН-ЧАТ
+        // Бот "слушает" только Клан-чат
+        if (text.includes('КЛАН:')) {
+            const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
+            if (isAuthorized) {
+                const lowerText = text.toLowerCase();
+                
+                if (lowerText.includes('stopad')) {
+                    if (adInterval) {
+                        clearInterval(adInterval);
+                        adInterval = null;
+                        console.log("⏹️ Реклама остановлена.");
+                    }
+                } else if (lowerText.includes('startad')) {
+                    if (!adInterval) {
+                        mcBot.chat(CLAN_AD_TEXT); // Отправка в Global
+                        adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 240000);
+                        console.log("✅ Реклама запущена.");
+                    }
+                } else if (lowerText.includes('ad')) {
+                    mcBot.chat(CLAN_AD_TEXT); // Отправка в Global
+                    console.log("💬 Реклама отправлена разово.");
                 }
-            } else if (lowerText.includes('startad')) {
-                if (!adInterval) {
-                    mcBot.chat(CLAN_AD_TEXT);
-                    adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 240000);
-                    mcBot.chat("/clan chat ✅ Реклама запущена.");
-                }
-            } else if (lowerText.includes(' ad')) {
-                mcBot.chat(CLAN_AD_TEXT);
             }
         }
 
-        // 3. АВТО-КОМАНДЫ (FLY / MONEY) - ДЛЯ ВСЕХ ИГРОКОВ
-        // Проверяем наличие ключевых слов в любом сообщении
-        if (lowerText.includes('fly') || lowerText.includes('money')) {
+        // АВТО-КОМАНДЫ FLY/MONEY (работают из любого чата)
+        if (text.toLowerCase().includes('fly') || text.toLowerCase().includes('money')) {
             const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
-            // Важно: бот не реагирует на самого себя
             if (cmdMatch && cmdMatch[1] !== mcBot.username) {
-                const targetName = cmdMatch[1];
-                const action = cmdMatch[2].toLowerCase();
-
-                if (action === 'fly') {
-                    mcBot.chat(`/fly ${targetName}`);
-                } else if (action === 'money') {
-                    mcBot.chat(`/eco set ${targetName} ${MONEY_AMOUNT}`);
+                if (cmdMatch[2].toLowerCase() === 'fly') {
+                    mcBot.chat(`/fly ${cmdMatch[1]}`);
+                } else {
+                    mcBot.chat(`/eco set ${cmdMatch[1]} ${MONEY_AMOUNT}`);
                 }
             }
         }
     });
 
     mcBot.on('end', () => {
-        console.log("Бот отключен. Переподключение через 60 секунд...");
         clearInterval(adInterval);
         adInterval = null;
         setTimeout(createMcBot, 60000);
