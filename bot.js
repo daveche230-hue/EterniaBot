@@ -11,7 +11,8 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-const CLAN_AD_TEXT = "const CLAN_AD_TEXT = "!Клан Eternia открыт! Бесплатный fly, 10Т, свой город и розыгрыши доната. Активный чат в ТГ. Вступай: /warp Eternia или /clan join Eternia";";
+// Исправленная строка
+const CLAN_AD_TEXT = "!Клан Eternia открыт! Бесплатный fly, 10Т, свой город и розыгрыши доната. Активный чат в ТГ. Вступай: /warp Eternia или /clan join Eternia";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
 let mcBot;
@@ -33,8 +34,15 @@ function createMcBot() {
         const text = jsonMsg.toString();
         console.log("ЧАТ: " + text);
 
-        // УПРАВЛЕНИЕ РЕКЛАМОЙ ЧЕРЕЗ КЛАН-ЧАТ
-        // Если сообщение от доверенного пользователя и содержит команду
+        // 1. ПРИВЕТСТВИЕ (настройте под текст вашего сервера)
+        // Обычно при вступлении в клан сервер пишет: "Игрок [Ник] вступил в клан"
+        if (text.includes('вступил в клан') || text.includes('присоединился к клану')) {
+            const words = text.split(' ');
+            const playerName = words[0]; // Предполагаем, что ник первый
+            mcBot.chat(`/clan chat Добро пожаловать, ${playerName}! Вступай в наш ТГ и читай правила в /warp Eternia.`);
+        }
+
+        // 2. УПРАВЛЕНИЕ РЕКЛАМОЙ ЧЕРЕЗ КЛАН-ЧАТ
         if (text.includes('КЛАН:')) {
             const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
             if (isAuthorized) {
@@ -53,19 +61,21 @@ function createMcBot() {
                     }
                 } else if (lowerText.includes('ad')) {
                     mcBot.chat(CLAN_AD_TEXT);
-                    console.log("💬 Реклама отправлена разово.");
                 }
             }
-        }
 
-        // АВТО-КОМАНДЫ FLY/MONEY
-        if (text.toLowerCase().includes('fly') || text.toLowerCase().includes('money')) {
-            const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
-            if (cmdMatch && cmdMatch[1] !== mcBot.username) {
-                if (cmdMatch[2].toLowerCase() === 'fly') {
-                    mcBot.chat(`/fly ${cmdMatch[1]}`);
-                } else {
-                    mcBot.chat(`/eco set ${cmdMatch[1]} ${MONEY_AMOUNT}`);
+            // 3. АВТО-КОМАНДЫ (Fly/Money) из Клан-чата
+            // Ищем команду типа: "Ник: fly" или "Ник: money"
+            const match = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
+            if (match && match[1] !== mcBot.username) {
+                const username = match[1];
+                const action = match[2].toLowerCase();
+
+                if (action === 'fly') {
+                    mcBot.chat(`/fly ${username}`);
+                } else if (action === 'money') {
+                    // Если не работает, попробуйте заменить на '/eco give'
+                    mcBot.chat(`/eco set ${username} ${MONEY_AMOUNT}`);
                 }
             }
         }
