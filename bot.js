@@ -11,7 +11,6 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-// Исправленная строка
 const CLAN_AD_TEXT = "!Клан Eternia открыт! Бесплатный fly, 10Т, свой город и розыгрыши доната. Активный чат в ТГ. Вступай: /warp Eternia или /clan join Eternia";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
@@ -32,40 +31,43 @@ function createMcBot() {
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
-        console.log("ЧАТ: " + text);
+        // Отладка: чтобы видеть в консоли, что именно приходит боту
+        console.log("ЧАТ:", text);
 
-        // 1. ПРИВЕТСТВИЕ (настройте под текст вашего сервера)
-        // Обычно при вступлении в клан сервер пишет: "Игрок [Ник] вступил в клан"
+        // 1. ПРИВЕТСТВИЕ (срабатывает, если в чате есть фраза о вступлении)
         if (text.includes('вступил в клан') || text.includes('присоединился к клану')) {
-            const words = text.split(' ');
-            const playerName = words[0]; // Предполагаем, что ник первый
+            const playerName = text.split(' ')[0];
             mcBot.chat(`/clan chat Добро пожаловать, ${playerName}! Вступай в наш ТГ и читай правила в /warp Eternia.`);
         }
 
-        // 2. УПРАВЛЕНИЕ РЕКЛАМОЙ ЧЕРЕЗ КЛАН-ЧАТ
-        if (text.includes('КЛАН:')) {
+        // 2. УПРАВЛЕНИЕ РЕКЛАМОЙ И КОМАНДЫ (ищем по ключевым словам)
+        // Проверяем, что сообщение похоже на клановое (может быть разный формат)
+        const isClanMessage = text.toLowerCase().includes('клан') || text.toLowerCase().includes('clan');
+        
+        if (isClanMessage) {
+            const lowerText = text.toLowerCase();
             const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
+
+            // РЕКЛАМА (только для доверенных)
             if (isAuthorized) {
-                const lowerText = text.toLowerCase();
                 if (lowerText.includes('stopad')) {
                     if (adInterval) {
                         clearInterval(adInterval);
                         adInterval = null;
-                        console.log("⏹️ Реклама остановлена.");
+                        mcBot.chat("/clan chat ⏹️ Реклама остановлена.");
                     }
                 } else if (lowerText.includes('startad')) {
                     if (!adInterval) {
                         mcBot.chat(CLAN_AD_TEXT);
                         adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 240000);
-                        console.log("✅ Реклама запущена.");
+                        mcBot.chat("/clan chat ✅ Реклама запущена.");
                     }
-                } else if (lowerText.includes('ad')) {
+                } else if (lowerText.includes(' ad') || lowerText === 'ad') {
                     mcBot.chat(CLAN_AD_TEXT);
                 }
             }
 
-            // 3. АВТО-КОМАНДЫ (Fly/Money) из Клан-чата
-            // Ищем команду типа: "Ник: fly" или "Ник: money"
+            // АВТО-КОМАНДЫ (Fly/Money) - работают для всех, кто пишет в клан-чат
             const match = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
             if (match && match[1] !== mcBot.username) {
                 const username = match[1];
@@ -74,7 +76,6 @@ function createMcBot() {
                 if (action === 'fly') {
                     mcBot.chat(`/fly ${username}`);
                 } else if (action === 'money') {
-                    // Если не работает, попробуйте заменить на '/eco give'
                     mcBot.chat(`/eco set ${username} ${MONEY_AMOUNT}`);
                 }
             }
