@@ -11,8 +11,7 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-// Чистая строка рекламы
-const CLAN_AD_TEXT = "!Клан Eternia открыт! Бесплатный fly, 10Т, свой город и розыгрыши доната. Активный чат в ТГ. Вступай: /warp Eternia или /clan join Eternia";
+const CLAN_AD_TEXT = "const CLAN_AD_TEXT = "!Клан Eternia открыт! Бесплатный fly, 10Т, свой город и розыгрыши доната. Активный чат в ТГ. Вступай: /warp Eternia или /clan join Eternia";";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
 let mcBot;
@@ -35,12 +34,11 @@ function createMcBot() {
         console.log("ЧАТ: " + text);
 
         // УПРАВЛЕНИЕ РЕКЛАМОЙ ЧЕРЕЗ КЛАН-ЧАТ
-        // Бот "слушает" только Клан-чат
+        // Если сообщение от доверенного пользователя и содержит команду
         if (text.includes('КЛАН:')) {
             const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
             if (isAuthorized) {
                 const lowerText = text.toLowerCase();
-                
                 if (lowerText.includes('stopad')) {
                     if (adInterval) {
                         clearInterval(adInterval);
@@ -49,18 +47,18 @@ function createMcBot() {
                     }
                 } else if (lowerText.includes('startad')) {
                     if (!adInterval) {
-                        mcBot.chat(CLAN_AD_TEXT); // Отправка в Global
+                        mcBot.chat(CLAN_AD_TEXT);
                         adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 240000);
                         console.log("✅ Реклама запущена.");
                     }
                 } else if (lowerText.includes('ad')) {
-                    mcBot.chat(CLAN_AD_TEXT); // Отправка в Global
+                    mcBot.chat(CLAN_AD_TEXT);
                     console.log("💬 Реклама отправлена разово.");
                 }
             }
         }
 
-        // АВТО-КОМАНДЫ FLY/MONEY (работают из любого чата)
+        // АВТО-КОМАНДЫ FLY/MONEY
         if (text.toLowerCase().includes('fly') || text.toLowerCase().includes('money')) {
             const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
             if (cmdMatch && cmdMatch[1] !== mcBot.username) {
@@ -74,6 +72,7 @@ function createMcBot() {
     });
 
     mcBot.on('end', () => {
+        console.log("Бот отключен. Переподключение через 60 секунд...");
         clearInterval(adInterval);
         adInterval = null;
         setTimeout(createMcBot, 60000);
