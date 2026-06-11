@@ -46,7 +46,7 @@ function createMcBot() {
                 }
             }
 
-            // УПРАВЛЕНИЕ РЕКЛАМОЙ (Строгие проверки)
+            // УПРАВЛЕНИЕ РЕКЛАМОЙ
             if (lowerText.includes('stopad')) {
                 if (adInterval) {
                     clearInterval(adInterval);
@@ -63,8 +63,13 @@ function createMcBot() {
                 } else {
                     mcBot.chat('/cc Реклама уже запущена!');
                 }
+            } else if (lowerText.includes('info')) {
+                if (adInterval) {
+                    mcBot.chat('/cc Реклама сейчас включена и идет каждые 3 минуты.');
+                } else {
+                    mcBot.chat('/cc Реклама сейчас выключена.');
+                }
             } else if (lowerText.includes('ad')) {
-                // Выполнится, только если это не startad/stopad
                 mcBot.chat(CLAN_AD_TEXT);
                 mcBot.chat('/cc Реклама отправлена разово.');
             }
