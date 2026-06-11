@@ -31,6 +31,9 @@ function createMcBot() {
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
+        // Эта строка возвращает отображение всего чата в логи
+        console.log("ЧАТ: " + text); 
+        
         const lowerText = text.toLowerCase();
         
         // 1. ПРОВЕРКА АВТОРИЗАЦИИ (Ваш ник или друга)
@@ -46,7 +49,7 @@ function createMcBot() {
                 }
             }
 
-            // УПРАВЛЕНИЕ РЕКЛАМОЙ
+            // УПРАВЛЕНИЕ РЕКЛАМОЙ (Строгие проверки)
             if (lowerText.includes('stopad')) {
                 if (adInterval) {
                     clearInterval(adInterval);
@@ -65,11 +68,12 @@ function createMcBot() {
                 }
             } else if (lowerText.includes('info')) {
                 if (adInterval) {
-                    mcBot.chat('/cc Реклама сейчас включена и идет каждые 3 минуты.');
+                    mcBot.chat('/cc Реклама сейчас включена.');
                 } else {
                     mcBot.chat('/cc Реклама сейчас выключена.');
                 }
             } else if (lowerText.includes('ad')) {
+                // Выполнится, только если это не startad/stopad/info
                 mcBot.chat(CLAN_AD_TEXT);
                 mcBot.chat('/cc Реклама отправлена разово.');
             }
