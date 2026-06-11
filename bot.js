@@ -11,7 +11,6 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-// Реклама без "!" в начале, чтобы сервер не мутил
 const CLAN_AD_TEXT = "Набор в клан Eternia! Fly, 10Т, город, розыгрыши. Активный чат в ТГ. Вступай: /warp Eternia или /clan join Eternia";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
@@ -34,11 +33,11 @@ function createMcBot() {
         const text = jsonMsg.toString();
         const lowerText = text.toLowerCase();
         
-        // Проверяем, от кого сообщение
+        // 1. ПРОВЕРКА АВТОРИЗАЦИИ (Ваш ник или друга)
         const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
 
         if (isAuthorized) {
-            // ПРИВЕТСТВИЕ НОВИЧКОВ (просто добавлено)
+            // ПРИВЕТСТВИЕ НОВИЧКОВ
             if (lowerText.includes('вступил в клан') || lowerText.includes('joined the clan')) {
                 const words = text.split(' ');
                 const playerName = words[0]; 
@@ -47,21 +46,25 @@ function createMcBot() {
                 }
             }
 
-            // УПРАВЛЕНИЕ РЕКЛАМОЙ (строгий порядок)
+            // УПРАВЛЕНИЕ РЕКЛАМОЙ (Строгие проверки)
             if (lowerText.includes('stopad')) {
                 if (adInterval) {
                     clearInterval(adInterval);
                     adInterval = null;
                     mcBot.chat('/cc Реклама остановлена.');
+                } else {
+                    mcBot.chat('/cc Реклама и так не запущена.');
                 }
             } else if (lowerText.includes('startad')) {
                 if (!adInterval) {
                     mcBot.chat(CLAN_AD_TEXT);
                     adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 185000);
                     mcBot.chat('/cc Реклама запущена (раз в 3 минуты).');
+                } else {
+                    mcBot.chat('/cc Реклама уже запущена!');
                 }
             } else if (lowerText.includes('ad')) {
-                // Выполняется только если нет слов startad или stopad
+                // Выполнится, только если это не startad/stopad
                 mcBot.chat(CLAN_AD_TEXT);
                 mcBot.chat('/cc Реклама отправлена разово.');
             }
