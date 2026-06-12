@@ -35,13 +35,16 @@ function createMcBot() {
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
         const lowerText = text.toLowerCase();
+        
+        // Очистка от цветовых кодов для корректного поиска
+        const cleanText = text.replace(/§[0-9a-fk-or]/g, ''); 
         console.log("ЧАТ: " + text);
         
         // 1. ПРИВЕТСТВИЕ НОВИЧКОВ
         if (lowerText.includes('вступил в клан') || lowerText.includes('joined the clan')) {
             const playerName = text.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, '');
             if (playerName !== mcBot.username) {
-                mcBot.chat(`/cc Добро пожаловать в Eternia, ${playerName}!`);
+                mcBot.chat(`/clanchat Добро пожаловать в Eternia, ${playerName}!`);
             }
         }
 
@@ -52,27 +55,27 @@ function createMcBot() {
                 if (adInterval) {
                     clearInterval(adInterval);
                     adInterval = null;
-                    mcBot.chat('/cc Реклама остановлена.');
+                    mcBot.chat('/clanchat Реклама остановлена.');
                 }
             } else if (lowerText.includes('startad')) {
                 if (!adInterval) {
                     mcBot.chat(CLAN_AD_TEXT);
                     adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 185000);
-                    mcBot.chat('/cc Реклама запущена.');
+                    mcBot.chat('/clanchat Реклама запущена.');
                 }
             } else if (lowerText.includes('ad')) {
                 mcBot.chat(CLAN_AD_TEXT);
-                mcBot.chat('/cc Реклама отправлена разово.');
+                mcBot.chat('/clanchat Реклама отправлена разово.');
             }
         }
 
         // 3. АВТО-КОМАНДЫ И ПЕРЕСЫЛКА КД
         // Если сервер пишет про КД, пересылаем это сообщение в клан-чат
-        if (text.includes('Эта команда будет доступна через')) {
-            mcBot.chat(`/cc ${text}`);
+        if (cleanText.includes('будет доступна через')) {
+            mcBot.chat(`/clanchat ${cleanText}`);
         } 
-        // Иначе ищем запрос команды от игрока (только если нет КД)
         else {
+            // Иначе ищем запрос команды от игрока
             const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
             if (cmdMatch && cmdMatch[1] !== mcBot.username) {
                 const player = cmdMatch[1];
