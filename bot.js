@@ -35,8 +35,6 @@ function createMcBot() {
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
         const lowerText = text.toLowerCase();
-        
-        // Очистка от цветовых кодов для корректного поиска
         const cleanText = text.replace(/§[0-9a-fk-or]/g, ''); 
         console.log("ЧАТ: " + text);
         
@@ -69,13 +67,15 @@ function createMcBot() {
             }
         }
 
-        // 3. АВТО-КОМАНДЫ И ПЕРЕСЫЛКА КД
-        // Если сервер пишет про КД, пересылаем это сообщение в клан-чат
+        // 3. АВТО-КОМАНДЫ И ОБРАБОТКА КД
         if (cleanText.includes('будет доступна через')) {
-            mcBot.chat(`/clanchat ${cleanText}`);
+            // Регулярное выражение ищет число в строке
+            const timeMatch = cleanText.match(/(\d+)\s*(сек|мин)/i);
+            const timeString = timeMatch ? timeMatch[0] : "неизвестно сколько";
+            
+            mcBot.chat(`/clanchat [КД] Эта команда будет доступна через ${timeString}.`);
         } 
         else {
-            // Иначе ищем запрос команды от игрока
             const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
             if (cmdMatch && cmdMatch[1] !== mcBot.username) {
                 const player = cmdMatch[1];
