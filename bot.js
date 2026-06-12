@@ -68,13 +68,16 @@ function createMcBot() {
             }
         }
 
-        // 3. АВТО-КОМАНДЫ FLY/MONEY И ПЕРЕХВАТ КУЛДАУНА
-        // Перехват сообщения из логов: "[*] Эта команда будет доступна через 58 сек."
-        if (lastRequestedCommand.player && lowerText.includes('доступна через')) {
-            mcBot.chat(`/cc ${lastRequestedCommand.player}, ${text.replace('[*] ', '')}`);
-            lastRequestedCommand = { player: null, cmd: null }; // Сброс после оповещения
+        // 3. ПЕРЕХВАТ КУЛДАУНА (Приоритет)
+        if (lowerText.includes('доступна через')) {
+            if (lastRequestedCommand.player) {
+                mcBot.chat(`/cc ${lastRequestedCommand.player}, ${text.replace('[*] ', '')}`);
+                lastRequestedCommand = { player: null, cmd: null };
+                return; // Прерываем выполнение, чтобы не пытаться слать команду снова
+            }
         }
 
+        // 4. АВТО-КОМАНДЫ FLY/MONEY
         const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
         if (cmdMatch && cmdMatch[1] !== mcBot.username) {
             const playerName = cmdMatch[1];
