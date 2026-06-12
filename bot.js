@@ -1,6 +1,5 @@
 const mineflayer = require('mineflayer');
 
-// ... (ваши настройки те же самые) ...
 const MC_SETTINGS = {
     host: 'mc.mineblaze.net',
     port: 25565,
@@ -16,7 +15,7 @@ const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
 let mcBot;
 let adInterval = null;
-let lastRequest = { player: null, time: 0 }; 
+let lastPlayer = null; // Кто последний запрашивал
 
 function createMcBot() {
     mcBot = mineflayer.createBot(MC_SETTINGS);
@@ -28,33 +27,45 @@ function createMcBot() {
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
-        
-        // 1. ПЕРЕХВАТ: Если прошло меньше 5 секунд с нашего запроса, и сервер пишет про время
-        // Ищем в тексте цифры и слово "сек"
-        if (Date.now() - lastRequest.time < 5000 && (text.includes('доступна через') || text.includes('секунд'))) {
-            mcBot.chat(`/cc ${lastRequest.player}, ${text}`);
-            lastRequest.time = 0; // Сбрасываем, чтобы не дублировать
-            return;
+        const lowerText = text.toLowerCase();
+        console.log("ЧАТ: " + text);
+
+        // 1. ПЕРЕХВАТ КУЛДАУНА
+        // Если сервер пишет эту фразу, и мы знаем, кто просил - пишем в клан чат
+        if (lowerText.includes('эта команда будет доступна через') && lastPlayer) {
+            mcBot.chat(`/cc ${lastPlayer}, ${text.replace('[*] ', '')}`);
+            lastPlayer = null; // Сбрасываем
         }
 
-        // 2. ОБРАБОТКА ЗАПРОСОВ
+        // 2. ОБРАБОТКА КОМАНД
         const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
         if (cmdMatch && cmdMatch[1] !== mcBot.username) {
-            const playerName = cmdMatch[1];
-            const cmdType = cmdMatch[2].toLowerCase();
+            lastPlayer = cmdMatch[1]; // Запоминаем игрока
             
-            lastRequest = { player: playerName, time: Date.now() };
-
-            if (cmdType === 'fly') {
-                mcBot.chat(`/fly ${playerName}`);
-            } else if (cmdType === 'money') {
-                mcBot.chat(`/eco set ${playerName} ${MONEY_AMOUNT}`);
+            if (cmdMatch[2].toLowerCase() === 'fly') {
+                mcBot.chat(`/fly ${lastPlayer}`);
+            } else {
+                mcBot.chat(`/eco set ${lastPlayer} ${MONEY_AMOUNT}`);
             }
         }
-        
-        // ... (остальной ваш код с рекламой и приветствиями) ...
+
+        // 3. ПРИВЕТСТВИЕ И РЕКЛАМА (оставляем без изменений)
+        if (lowerText.includes('вступил в клан') || lowerText.includes('joined the clan')) {
+            const words = text.split(' ');
+            const playerName = words[0]; 
+            if (playerName !== mcBot.username) mcBot.chat(`/cc Добро пожаловать в Eternia, ${playerName}!`);
+        }
+
+        const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
+        if (isAuthorized) {
+            if (lowerText.includes('stopad')) { clearInterval(adInterval); adInterval = null; mcBot.chat('/cc Реклама остановлена.'); }
+            else if (lowerText.includes('startad')) { 
+                if (!adInterval) { mcBot.chat(CLAN_AD_TEXT); adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 185000); mcBot.chat('/cc Реклама запущена.'); }
+            }
+        }
     });
 
     mcBot.on('end', () => setTimeout(createMcBot, 60000));
 }
+
 createMcBot();
