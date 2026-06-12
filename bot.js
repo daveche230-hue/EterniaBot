@@ -66,19 +66,13 @@ function createMcBot() {
             }
         }
 
-        // 3. АВТО-КОМАНДЫ И УМНАЯ ПЕРЕСЫЛКА КД (image_78f058.png)
-        // Проверяем, пишет ли сервер сообщение об ожидании
-        const isCooldownMessage = lowerText.includes('будет доступна через') || 
-                                  lowerText.includes('подождите') || 
-                                  lowerText.includes('перезарядка') || 
-                                  lowerText.includes('осталось') ||
-                                  lowerText.includes('выключено');
-
-        if (isCooldownMessage) {
-            // Если сервер пишет про КД, пересылаем это сообщение в клан-чат
+        // 3. АВТО-КОМАНДЫ И ПЕРЕСЫЛКА КД
+        // Если сервер пишет про КД, пересылаем это сообщение в клан-чат
+        if (text.includes('Эта команда будет доступна через')) {
             mcBot.chat(`/cc ${text}`);
-        } else {
-            // Если это обычное сообщение, ищем запрос команды от игрока
+        } 
+        // Иначе ищем запрос команды от игрока (только если нет КД)
+        else {
             const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
             if (cmdMatch && cmdMatch[1] !== mcBot.username) {
                 const player = cmdMatch[1];
@@ -86,7 +80,7 @@ function createMcBot() {
 
                 if (type === 'fly') {
                     mcBot.chat(`/fly ${player}`);
-                } else {
+                } else if (type === 'money') {
                     mcBot.chat(`/eco set ${player} ${MONEY_AMOUNT}`);
                 }
             }
