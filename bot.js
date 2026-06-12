@@ -1,6 +1,6 @@
 const mineflayer = require('mineflayer');
 
-// НАСТРОЙКИ
+// ... (ваши настройки те же самые) ...
 const MC_SETTINGS = {
     host: 'mc.mineblaze.net',
     port: 25565,
@@ -16,74 +16,34 @@ const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
 
 let mcBot;
 let adInterval = null;
-let lastRequestedCommand = { player: null, cmd: null };
+let lastRequest = { player: null, time: 0 }; 
 
 function createMcBot() {
     mcBot = mineflayer.createBot(MC_SETTINGS);
 
     mcBot.once('spawn', () => {
-        console.log("Бот на сервере.");
         setTimeout(() => mcBot.chat(`/login ${MC_PASSWORD}`), 6000);
-        setTimeout(() => { 
-            mcBot.chat('/s1'); 
-            setTimeout(() => mcBot.chat('/c join Eternia'), 3000);
-        }, 12000);
+        setTimeout(() => { mcBot.chat('/s1'); setTimeout(() => mcBot.chat('/c join Eternia'), 3000); }, 12000);
     });
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
-        console.log("ЧАТ: " + text);
         
-        const lowerText = text.toLowerCase();
-        const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
-
-        // 1. ПРИВЕТСТВИЕ НОВИЧКОВ
-        if (lowerText.includes('вступил в клан') || lowerText.includes('joined the clan')) {
-            const words = text.split(' ');
-            const playerName = words[0]; 
-            if (playerName !== mcBot.username) {
-                mcBot.chat(`/cc Добро пожаловать в Eternia, ${playerName}!`);
-            }
+        // 1. ПЕРЕХВАТ: Если прошло меньше 5 секунд с нашего запроса, и сервер пишет про время
+        // Ищем в тексте цифры и слово "сек"
+        if (Date.now() - lastRequest.time < 5000 && (text.includes('доступна через') || text.includes('секунд'))) {
+            mcBot.chat(`/cc ${lastRequest.player}, ${text}`);
+            lastRequest.time = 0; // Сбрасываем, чтобы не дублировать
+            return;
         }
 
-        // 2. УПРАВЛЕНИЕ РЕКЛАМОЙ И INFO
-        if (isAuthorized) {
-            if (lowerText.includes('stopad')) {
-                if (adInterval) {
-                    clearInterval(adInterval);
-                    adInterval = null;
-                    mcBot.chat('/cc Реклама остановлена.');
-                }
-            } else if (lowerText.includes('startad')) {
-                if (!adInterval) {
-                    mcBot.chat(CLAN_AD_TEXT);
-                    adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 185000);
-                    mcBot.chat('/cc Реклама запущена (раз в 3 минуты).');
-                }
-            } else if (lowerText.includes('info')) {
-                mcBot.chat(adInterval ? '/cc Реклама включена.' : '/cc Реклама выключена.');
-            } else if (lowerText.includes('ad')) {
-                mcBot.chat(CLAN_AD_TEXT);
-                mcBot.chat('/cc Реклама отправлена разово.');
-            }
-        }
-
-        // 3. ПЕРЕХВАТ КУЛДАУНА (Приоритет)
-        if (lowerText.includes('доступна через')) {
-            if (lastRequestedCommand.player) {
-                mcBot.chat(`/cc ${lastRequestedCommand.player}, ${text.replace('[*] ', '')}`);
-                lastRequestedCommand = { player: null, cmd: null };
-                return; // Прерываем выполнение, чтобы не пытаться слать команду снова
-            }
-        }
-
-        // 4. АВТО-КОМАНДЫ FLY/MONEY
+        // 2. ОБРАБОТКА ЗАПРОСОВ
         const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
         if (cmdMatch && cmdMatch[1] !== mcBot.username) {
             const playerName = cmdMatch[1];
             const cmdType = cmdMatch[2].toLowerCase();
             
-            lastRequestedCommand = { player: playerName, cmd: cmdType };
+            lastRequest = { player: playerName, time: Date.now() };
 
             if (cmdType === 'fly') {
                 mcBot.chat(`/fly ${playerName}`);
@@ -91,12 +51,10 @@ function createMcBot() {
                 mcBot.chat(`/eco set ${playerName} ${MONEY_AMOUNT}`);
             }
         }
+        
+        // ... (остальной ваш код с рекламой и приветствиями) ...
     });
 
-    mcBot.on('end', () => {
-        clearInterval(adInterval);
-        setTimeout(createMcBot, 60000);
-    });
+    mcBot.on('end', () => setTimeout(createMcBot, 60000));
 }
-
 createMcBot();
