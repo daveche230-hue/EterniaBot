@@ -66,20 +66,24 @@ function createMcBot() {
             }
         }
 
-        // 3. АВТО-КОМАНДЫ И МОНИТОРИНГ КД
-        const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
-        if (cmdMatch && cmdMatch[1] !== mcBot.username) {
-            const player = cmdMatch[1];
-            const type = cmdMatch[2].toLowerCase();
+        // 3. АВТО-КОМАНДЫ И УМНАЯ ПЕРЕСЫЛКА КД (image_78f058.png)
+        // Проверяем, пишет ли сервер сообщение об ожидании
+        const isCooldownMessage = lowerText.includes('будет доступна через') || 
+                                  lowerText.includes('подождите') || 
+                                  lowerText.includes('перезарядка') || 
+                                  lowerText.includes('осталось') ||
+                                  lowerText.includes('выключено');
 
-            // Если бот видит в чате сообщение от сервера про КД
-            if (lowerText.includes('подождите') || lowerText.includes('через') || 
-                lowerText.includes('перезарядка') || lowerText.includes('осталось') || 
-                lowerText.includes('доступна')) {
-                // Если кто-то из игроков получил отказ от сервера, бот дублирует это в Клан-чат
-                mcBot.chat(`/cc @${player}, сервер ответил: ${text}`);
-            } else {
-                // Если КД нет, отправляем команду
+        if (isCooldownMessage) {
+            // Если сервер пишет про КД, пересылаем это сообщение в клан-чат
+            mcBot.chat(`/cc ${text}`);
+        } else {
+            // Если это обычное сообщение, ищем запрос команды от игрока
+            const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
+            if (cmdMatch && cmdMatch[1] !== mcBot.username) {
+                const player = cmdMatch[1];
+                const type = cmdMatch[2].toLowerCase();
+
                 if (type === 'fly') {
                     mcBot.chat(`/fly ${player}`);
                 } else {
