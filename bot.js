@@ -13,7 +13,7 @@ const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
 // ВАШ НОВЫЙ ТЕКСТ РЕКЛАМЫ
 const CLAN_AD_TEXT = "!&5&lСейчас проходит набор в клан Eternia &f&lв нем вы получите 10Т,флай,крутых тимейтов, красивый кх,доступ в билд зону,лучший пвп кит,розыгрыши доната. &d&l&nЧтобы вступить пиши /warp Et или /c join Eternia ждём именно тебя.";
-const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
+const ALLOWED_USERS = ['Dave_che', 'vexrezer','TyanochaHvH'];
 
 let mcBot;
 let adInterval = null;
