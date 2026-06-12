@@ -11,9 +11,11 @@ const MC_SETTINGS = {
 };
 const MC_PASSWORD = '12345678';
 const MONEY_AMOUNT = '10000000000000';
-// ВАШ НОВЫЙ ТЕКСТ РЕКЛАМЫ
+
+// ТЕКСТ РЕКЛАМЫ
 const CLAN_AD_TEXT = "!&5&lСейчас проходит набор в клан Eternia &f&lв нем вы получите 10Т,флай,крутых тимейтов, красивый кх,доступ в билд зону,лучший пвп кит,розыгрыши доната. &d&l&nЧтобы вступить пиши /warp Et или /c join Eternia ждём именно тебя.";
 const ALLOWED_USERS = ['Dave_che', 'vexrezer'];
+const REGION_NAME = "eternia_base"; 
 
 let mcBot;
 let adInterval = null;
@@ -32,21 +34,19 @@ function createMcBot() {
 
     mcBot.on('message', (jsonMsg) => {
         const text = jsonMsg.toString();
-        console.log("ЧАТ: " + text); // Логирование чата возвращено
-        
         const lowerText = text.toLowerCase();
-        const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
-
+        console.log("ЧАТ: " + text);
+        
         // 1. ПРИВЕТСТВИЕ НОВИЧКОВ
         if (lowerText.includes('вступил в клан') || lowerText.includes('joined the clan')) {
-            const words = text.split(' ');
-            const playerName = words[0]; 
+            const playerName = text.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, '');
             if (playerName !== mcBot.username) {
                 mcBot.chat(`/cc Добро пожаловать в Eternia, ${playerName}!`);
             }
         }
 
-        // 2. УПРАВЛЕНИЕ РЕКЛАМОЙ И INFO
+        // 2. УПРАВЛЕНИЕ РЕКЛАМОЙ
+        const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
         if (isAuthorized) {
             if (lowerText.includes('stopad')) {
                 if (adInterval) {
@@ -58,26 +58,41 @@ function createMcBot() {
                 if (!adInterval) {
                     mcBot.chat(CLAN_AD_TEXT);
                     adInterval = setInterval(() => mcBot.chat(CLAN_AD_TEXT), 185000);
-                    mcBot.chat('/cc Реклама запущена (раз в 3 минуты).');
+                    mcBot.chat('/cc Реклама запущена.');
                 }
-            } else if (lowerText.includes('info')) {
-                // Команда info
-                mcBot.chat(adInterval ? '/cc Реклама включена.' : '/cc Реклама выключена.');
             } else if (lowerText.includes('ad')) {
                 mcBot.chat(CLAN_AD_TEXT);
                 mcBot.chat('/cc Реклама отправлена разово.');
             }
         }
 
-        // 3. АВТО-КОМАНДЫ FLY/MONEY
-        if (lowerText.includes('fly') || lowerText.includes('money')) {
-            const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
-            if (cmdMatch && cmdMatch[1] !== mcBot.username) {
-                if (cmdMatch[2].toLowerCase() === 'fly') {
-                    mcBot.chat(`/fly ${cmdMatch[1]}`);
+        // 3. АВТО-КОМАНДЫ И МОНИТОРИНГ КД
+        const cmdMatch = text.match(/([a-zA-Z0-9_]+)[\s:!]+(fly|money)/i);
+        if (cmdMatch && cmdMatch[1] !== mcBot.username) {
+            const player = cmdMatch[1];
+            const type = cmdMatch[2].toLowerCase();
+
+            // Если бот видит в чате сообщение от сервера про КД
+            if (lowerText.includes('подождите') || lowerText.includes('через') || 
+                lowerText.includes('перезарядка') || lowerText.includes('осталось') || 
+                lowerText.includes('доступна')) {
+                // Если кто-то из игроков получил отказ от сервера, бот дублирует это в Клан-чат
+                mcBot.chat(`/cc @${player}, сервер ответил: ${text}`);
+            } else {
+                // Если КД нет, отправляем команду
+                if (type === 'fly') {
+                    mcBot.chat(`/fly ${player}`);
                 } else {
-                    mcBot.chat(`/eco set ${cmdMatch[1]} ${MONEY_AMOUNT}`);
+                    mcBot.chat(`/eco set ${player} ${MONEY_AMOUNT}`);
                 }
+            }
+        }
+
+        // 4. ДОБАВЛЕНИЕ В БИЛД-ЗОНУ
+        if (lowerText.includes('!addme')) {
+            const playerName = text.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, '');
+            if (playerName && playerName !== mcBot.username) {
+                mcBot.chat(`/rg addmember ${REGION_NAME} ${playerName}`);
             }
         }
     });
