@@ -7,7 +7,7 @@ const TG_TOKEN = '8578905918:AAHcRx23RfToUQlHniU74Tu9GQg7HRDJ_FQ';
 const CHANNEL_ID = '8229657533'; // <-- ВСТАВЬТЕ СЮДА ID ВАШЕГО КАНАЛА
 const REGION_NAME = 'eterniamoy';
 
-const tgBot = new Telegraf(TG_TOKEN);
+const tgBot = new Telegraf(8578905918:AAHcRx23RfToUQlHniU74Tu9GQg7HRDJ_FQ);
 const app = express();
 
 app.get('/check', async (req, res) => {
