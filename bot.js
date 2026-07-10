@@ -38,13 +38,21 @@ function createMcBot() {
         const isAuthorized = ALLOWED_USERS.some(user => text.includes(user));
 
         // 1. ПРИВЕТСТВИЕ НОВИЧКОВ
-        if (lowerText.includes('вступил в клан') || lowerText.includes('joined the clan')) {
-            const words = text.split(' ');
-            const playerName = words[0]; 
-            if (playerName !== mcBot.username) {
-                mcBot.chat(`/cc Добро пожаловать в Eternia, ${playerName}!`);
-            }
-        }
+        // Добавил проверку на несколько частых вариантов сообщений серверов
+        const joinPhrases = ['вступил в клан', 'joined the clan', 'присоединился к клану', 'has joined the clan'];
+        
+        if (joinPhrases.some(phrase => lowerText.includes(phrase))) {
+            // Регулярное выражение для извлечения первого слова (никнейма)
+            // Оно берет всё до пробела
+            const playerName = text.split(' ')[0].replace(/[^a-zA-Z0-9_]/g, ''); 
+            
+            if (playerName && playerName !== mcBot.username) {
+                // Добавим небольшую задержку, чтобы чат не перегружался
+                setTimeout(() => {
+                    mcBot.chat(`/cc Добро пожаловать в Eternia, ${playerName}!`);
+                }, 1500);
+            }
+        }
 
         // 2. УПРАВЛЕНИЕ РЕКЛАМОЙ И INFO
         if (isAuthorized) {
