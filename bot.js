@@ -28,7 +28,7 @@ let AD_NAMES = [
     "Пятая реклама"
 ];
 
-const ALLOWED_USERS = ['Dave_che', 'vexrezer','TyanochaHvH'];
+const ALLOWED_USERS = ['Dave_che', 'vexrezer', 'TyanochaHvH'];
 
 // СТАТИСТИКА
 let stats = {
